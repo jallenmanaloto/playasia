@@ -1,5 +1,5 @@
 use crate::middleware::JwtMiddleware;
-use crate::routes::{create, get_all_items, get_item, health_check};
+use crate::routes::{create, edit, get_all_items, get_item, health_check};
 use poem::{get, handler, listener::TcpListener, web::Path, EndpointExt, Route, Server};
 
 #[handler]
@@ -12,7 +12,7 @@ pub async fn run(address: String) -> Result<(), std::io::Error> {
     let app = Route::new()
         .at("/health", get(health_check))
         .at("/items", get(get_all_items).post(create))
-        .at("/items/:id", get(get_item))
+        .at("/items/:id", get(get_item).put(edit))
         .at("/hello/:name", get(hello))
         .with(JwtMiddleware::new("secret-key"));
     Server::new(TcpListener::bind(address)).run(app).await
