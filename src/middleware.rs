@@ -14,7 +14,7 @@ struct Claims {
 }
 
 pub struct JwtMiddleware {
-    secret: String,
+    pub secret: String,
 }
 
 impl JwtMiddleware {
