@@ -158,3 +158,50 @@ pub fn edit(
 
     Ok(Json(updated_item).with_status(StatusCode::OK))
 }
+
+#[derive(Serialize)]
+pub struct DeletedMessageResponse {
+    pub message: String,
+}
+
+#[handler]
+pub fn delete(Path(id): Path<u16>) -> Result<impl IntoResponse, PoemError> {
+    let file_path = "data.json".to_string();
+
+    let mut items = Item::get_all().map_err(|err| {
+        PoemError::from_response(
+            ApiError {
+                message: format!("Failed to retrieve items: {}", err),
+                code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            }
+            .into_response(),
+        )
+    })?;
+
+    let item_position = items.iter().position(|item| item.id == id).ok_or_else(|| {
+        PoemError::from_response(
+            ApiError {
+                message: format!("Item with id {} not found", id),
+                code: StatusCode::NOT_FOUND.as_u16(),
+            }
+            .into_response(),
+        )
+    })?;
+
+    let _ = items.remove(item_position);
+
+    let _ = Item::write_to_file(file_path, items).map_err(|err| {
+        PoemError::from_response(
+            ApiError {
+                message: format!("Failed to write to file: {}", err),
+                code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            }
+            .into_response(),
+        )
+    })?;
+
+    Ok(Json(DeletedMessageResponse {
+        message: "Item deleted successfully".to_string(),
+    })
+    .with_status(StatusCode::OK))
+}
