@@ -4,9 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-poem = "3.1.6"
+poem = { version = "3.1.6", features = ["test"] }
 config = "0.15"
 jsonwebtoken = "9.0"
 tokio = { version = "1.43", features = ["macros", "rt-multi-thread"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serial_test = "3.2"
