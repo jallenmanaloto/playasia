@@ -28,7 +28,7 @@ impl Item {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct NewItem {
+pub struct RequestBody {
     pub name: String,
 }
 
@@ -72,7 +72,7 @@ pub fn get_item(Path(id): Path<u16>) -> Result<impl IntoResponse, PoemError> {
 }
 
 #[handler]
-pub async fn create(Json(payload): Json<NewItem>) -> Result<impl IntoResponse, PoemError> {
+pub async fn create(Json(payload): Json<RequestBody>) -> Result<impl IntoResponse, PoemError> {
     let file_path = "data.json".to_string();
     let mut items = Item::get_all().map_err(|err| {
         PoemError::from_response(
@@ -113,15 +113,48 @@ pub async fn create(Json(payload): Json<NewItem>) -> Result<impl IntoResponse, P
         )
     })?;
 
-    let response = serde_json::to_string(&new_item).map_err(|err| {
+    Ok(Json(new_item).with_status(StatusCode::CREATED))
+}
+
+#[handler]
+pub fn edit(
+    Path(id): Path<u16>,
+    Json(payload): Json<RequestBody>,
+) -> Result<impl IntoResponse, PoemError> {
+    let file_path = "data.json".to_string();
+
+    let mut items = Item::get_all().map_err(|err| {
         PoemError::from_response(
             ApiError {
-                message: format!("Failed to serialize response: {}", err),
+                message: format!("Failed to retrieve items: {}", err),
                 code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
             }
             .into_response(),
         )
     })?;
 
-    Ok((StatusCode::CREATED, response))
+    let item = items.iter_mut().find(|item| item.id == id).ok_or_else(|| {
+        PoemError::from_response(
+            ApiError {
+                message: format!("Item with id {} not found", id),
+                code: StatusCode::NOT_FOUND.as_u16(),
+            }
+            .into_response(),
+        )
+    })?;
+
+    item.name = payload.name;
+    let updated_item = item.clone();
+
+    let _ = Item::write_to_file(file_path, items).map_err(|err| {
+        PoemError::from_response(
+            ApiError {
+                message: format!("Failed to write to file: {}", err),
+                code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            }
+            .into_response(),
+        )
+    })?;
+
+    Ok(Json(updated_item).with_status(StatusCode::OK))
 }
