@@ -21,7 +21,8 @@ impl Item {
         Ok(items)
     }
 
-    fn write_to_file(file_path: String, data: Vec<Self>) -> Result<(), Box<dyn Error>> {
+    fn write_to_file(file_path: Option<String>, data: Vec<Self>) -> Result<(), Box<dyn Error>> {
+        let file_path = file_path.unwrap_or("data.json".to_string());
         let _ = fs::write(file_path, serde_json::to_string_pretty(&data)?);
         Ok(())
     }
@@ -73,7 +74,6 @@ pub fn get_item(Path(id): Path<u16>) -> Result<impl IntoResponse, PoemError> {
 
 #[handler]
 pub async fn create(Json(payload): Json<RequestBody>) -> Result<impl IntoResponse, PoemError> {
-    let file_path = "data.json".to_string();
     let mut items = Item::get_all().map_err(|err| {
         PoemError::from_response(
             ApiError {
@@ -103,7 +103,7 @@ pub async fn create(Json(payload): Json<RequestBody>) -> Result<impl IntoRespons
         )
     })?;
 
-    let _ = Item::write_to_file(file_path, items).map_err(|err| {
+    let _ = Item::write_to_file(None, items).map_err(|err| {
         PoemError::from_response(
             ApiError {
                 message: format!("Failed to write to file: {}", err),
@@ -121,8 +121,6 @@ pub fn edit(
     Path(id): Path<u16>,
     Json(payload): Json<RequestBody>,
 ) -> Result<impl IntoResponse, PoemError> {
-    let file_path = "data.json".to_string();
-
     let mut items = Item::get_all().map_err(|err| {
         PoemError::from_response(
             ApiError {
@@ -146,7 +144,7 @@ pub fn edit(
     item.name = payload.name;
     let updated_item = item.clone();
 
-    let _ = Item::write_to_file(file_path, items).map_err(|err| {
+    let _ = Item::write_to_file(None, items).map_err(|err| {
         PoemError::from_response(
             ApiError {
                 message: format!("Failed to write to file: {}", err),
@@ -166,8 +164,6 @@ pub struct DeletedMessageResponse {
 
 #[handler]
 pub fn delete(Path(id): Path<u16>) -> Result<impl IntoResponse, PoemError> {
-    let file_path = "data.json".to_string();
-
     let mut items = Item::get_all().map_err(|err| {
         PoemError::from_response(
             ApiError {
@@ -190,7 +186,7 @@ pub fn delete(Path(id): Path<u16>) -> Result<impl IntoResponse, PoemError> {
 
     let _ = items.remove(item_position);
 
-    let _ = Item::write_to_file(file_path, items).map_err(|err| {
+    let _ = Item::write_to_file(None, items).map_err(|err| {
         PoemError::from_response(
             ApiError {
                 message: format!("Failed to write to file: {}", err),
