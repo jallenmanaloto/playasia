@@ -3,19 +3,19 @@
 A simple CRUD application built with Rust and [Poem](https://docs.rs/poem/latest/poem/index.html) as part of a job application with Playasia. This project demonstrates basic Create, Read, Update, and Delete operations on a file-based JSON "database" with JWT-based authentication on non-GET endpoints.
 
 ## Features
-- **Server health check:**  
+- **Server health check:**
   Implement an endpoint to ping the server and ensure that it is active.
 
-- **CRUD Operations:**  
+- **CRUD Operations:**
   Implement endpoints to create, read, update, and delete items.
 
-- **File-Based Storage:**  
+- **File-Based Storage:**
   Uses a `data.json` file to store data as a JSON array.
 
-- **JWT Authentication:**  
+- **JWT Authentication:**
   Secures non-GET endpoints with JWT-based middleware. All requests aside from GET must include a valid Bearer token.
 
-- **Comprehensive Testing:**  
+- **Comprehensive Testing:**
   Integration tests using Poem's testing utilities along with the `serial_test` crate to run tests sequentially, ensuring consistency.
 
 ## Requirements
@@ -34,7 +34,7 @@ A simple CRUD application built with Rust and [Poem](https://docs.rs/poem/latest
    ```bash
    # clone the repo
    git clone https://github.com/jallenmanaloto/playasia.git
-   
+
    # open directory
    cd playasia
 
@@ -48,86 +48,94 @@ A simple CRUD application built with Rust and [Poem](https://docs.rs/poem/latest
 
 The application exposes the following endpoints:
 
-- **GET /health**  
+- **GET /health**
   Returns a simple health-check response indicating that the service is running.
 
-- **GET /items**  
+- **GET /items**
   Retrieves a list of all items stored in the application’s database (a JSON file).
-  
-- **GET /items/:id**  
+
+- **GET /items/:id**
   Retrieves the details of a specific item by its ID.
 
-- **POST /items**  
-  Creates a new item.  
-  
-  **Headers:**  
-  - `Content-Type: application/json`  
-  - `Authorization: Bearer <token>` (required for non-GET requests)  
-  
-  **Request Body Example:**  
-  ```json
-  {
-    "name": "Item Name"
-  }
-  ```
-  
-  **Response Example:** 
-  ```json
-  {
-    "id": 1,
-    "name": "Item Name"
-  }
-  ```
-  
-- **PUT /items/:id**  
-Updates an existing item. 
+- **POST /items**
+  Creates a new item.
 
-    **Headers:**  
-    - `Content-Type: application/json`  
-    - `Authorization: Bearer <token>` (required for non-GET requests)  
-  
-  **Request Body Example:**  
-  ```json
-  {
-    "name": "Update Item Name"
-  }
-  ```
-  **Response Example:** 
-  ```json
-  {
-    "id": 1,
-    "name": "Update Item Name"
-  }
-  ```
-
-- **DELETE /items/:id**  
-  Deletes an item by its ID.
-
-  **Headers:**  
-  - `Content-Type: application/json`  
+  **Headers:**
+  - `Content-Type: application/json`
   - `Authorization: Bearer <token>` (required for non-GET requests)
 
-  **Response Example:** 
+  **Request Body Example:**
+  ```json
+  {
+    "name": "Item Name"
+  }
+  ```
+
+  **Response Example:**
+  ```json
+  {
+    "id": 1,
+    "name": "Item Name"
+  }
+  ```
+
+- **PUT /items/:id**
+Updates an existing item.
+
+    **Headers:**
+    - `Content-Type: application/json`
+    - `Authorization: Bearer <token>` (required for non-GET requests)
+
+  **Request Body Example:**
+  ```json
+  {
+    "name": "Update Item Name"
+  }
+  ```
+  **Response Example:**
+  ```json
+  {
+    "id": 1,
+    "name": "Update Item Name"
+  }
+  ```
+
+- **DELETE /items/:id**
+  Deletes an item by its ID.
+
+  **Headers:**
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <token>` (required for non-GET requests)
+
+  **Response Example:**
   ```json
   {
     "message": "Item deleted successfully"
   }
   ```
-  
+
+**Authentication**
+
+All non-GET endpoints require a valid Bearer token provided in the `Authorization` header. For local testing, please use the following token:
+
+```bash
+    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIiwiZXhwIjoxODkzNDU2MDAwfQ.CEvP_ma0kab9ugQ8oPCVn08U7G9YTu1sNxzGmvhs3lA
+```
+
 ## Testing
 
 Integration tests for the application are located in the tests directory and cover both the item endpoints and the middleware behavior. Key points include:
 
-- **Item Endpoints**  
+- **Item Endpoints**
   Tests verify that items can be created, retrieved, updated, and deleted as expected.
     - For example, tests create items via POST, then validate their presence via GET, and finally ensure deletion removes them.
 
-- **Middleware**  
+- **Middleware**
   Tests ensure that:
     - GET requests are allowed without an authentication token.
     - Non-GET requests (POST, PUT, DELETE) are rejected unless a valid Bearer token is provided.
 
-- **Running Tests:**  
+- **Running Tests:**
   To run all tests:
 ```bash
     cargo test
