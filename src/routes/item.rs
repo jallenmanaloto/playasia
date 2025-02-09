@@ -4,7 +4,7 @@ use poem::{handler, http::StatusCode, Error as PoemError, IntoResponse};
 use serde::{Deserialize, Serialize};
 use std::{error::Error, fs};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Item {
     pub id: u16,
     pub name: String,
@@ -20,6 +20,16 @@ impl Item {
         let items = serde_json::from_str(&data)?;
         Ok(items)
     }
+
+    fn write_to_file(file_path: String, data: Vec<Self>) -> Result<(), Box<dyn Error>> {
+        let _ = fs::write(file_path, serde_json::to_string_pretty(&data)?);
+        Ok(())
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NewItem {
+    pub name: String,
 }
 
 #[handler]
@@ -59,4 +69,59 @@ pub fn get_item(Path(id): Path<u16>) -> Result<impl IntoResponse, PoemError> {
             .into_response(),
         )),
     }
+}
+
+#[handler]
+pub async fn create(Json(payload): Json<NewItem>) -> Result<impl IntoResponse, PoemError> {
+    let file_path = "data.json".to_string();
+    let mut items = Item::get_all().map_err(|err| {
+        PoemError::from_response(
+            ApiError {
+                message: format!("Failed to retrieve items: {}", err),
+                code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            }
+            .into_response(),
+        )
+    })?;
+
+    let next_id = items.iter().map(|item| item.id).max().unwrap_or(0) + 1;
+
+    let new_item = Item {
+        id: next_id,
+        name: payload.name,
+    };
+
+    items.push(new_item.clone());
+
+    let _updated_data = serde_json::to_string_pretty(&items).map_err(|err| {
+        PoemError::from_response(
+            ApiError {
+                message: format!("Failed to create an item: {}", err),
+                code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            }
+            .into_response(),
+        )
+    })?;
+
+    let _ = Item::write_to_file(file_path, items).map_err(|err| {
+        PoemError::from_response(
+            ApiError {
+                message: format!("Failed to write to file: {}", err),
+                code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            }
+            .into_response(),
+        )
+    })?;
+
+    let response = serde_json::to_string(&new_item).map_err(|err| {
+        PoemError::from_response(
+            ApiError {
+                message: format!("Failed to serialize response: {}", err),
+                code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            }
+            .into_response(),
+        )
+    })?;
+
+    Ok((StatusCode::CREATED, response))
 }
